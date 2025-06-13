@@ -11,8 +11,8 @@ def getsampleparams(sample):
     if all([tag.lower() in sample.lower() for tag in ['HIPM_UL2016', 'Run2016']]):
         years.append('2016PreVFP')
         dtypes.append('data')
-    if all([tag.lower() in sample.lower() for tag in ['-UL2016', 'Run2016']]):
-        years.append('2016PreVFP')
+    if all([tag.lower() in sample.lower() for tag in ['UL2016', 'Run2016']]) and not "HIPM_UL2016".lower() in sample.lower():
+        years.append('2016PostVFP')
         dtypes.append('data')
     if all([tag.lower() in sample.lower() for tag in ['UL2017', 'Run2017']]):
         years.append('2017')
@@ -20,10 +20,10 @@ def getsampleparams(sample):
     if all([tag.lower() in sample.lower() for tag in ['UL2018', 'Run2018']]):
         years.append('2018')
         dtypes.append('data')
-    if any([tag.lower() in sample.lower() for tag in ['RunIISummer20UL16APV', 'Run2SIM_UL2016PreVFP', 'PreVFP', 'preVFP']]):
+    if any([tag.lower() in sample.lower() for tag in ['RunIISummer20UL16APV', 'Run2SIM_UL2016PreVFP', 'PreVFP', 'preVFP', 'RunIISummer20UL16NanoAODAPV']]):
         years.append('2016PreVFP')
         dtypes.append('sim')
-    if any([tag.lower() in sample.lower() for tag in ['RunIISummer20UL16NanoAOD', 'Run2SIM_UL2016PostVFP', 'Run2SIM_UL2016Mini', 'PostVFP']]):
+    if any([tag.lower() in sample.lower() for tag in ['RunIISummer20UL16NanoAODv', 'Run2SIM_UL2016PostVFP', 'Run2SIM_UL2016Mini', 'PostVFP']]):
         years.append('2016PostVFP')
         dtypes.append('sim')
     if any([tag.lower() in sample.lower() for tag in ['RunIISummer20UL17', 'Run2SIM_UL2017']]):

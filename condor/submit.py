@@ -35,6 +35,8 @@ if __name__ == "__main__":
                         help='Number of entries to process per unit')
     parser.add_argument('-b', '--batchsize', default=50,
                         help='Number of files processed in each job.')
+    parser.add_argument('-v', '--version', default='all',
+                        help='Version of the dataset to process, options are: all, recent')
     args = parser.parse_args()
 
     # read datasets
@@ -51,36 +53,54 @@ if __name__ == "__main__":
     datestring = dateTimeObj.strftime("%Y%m%d_%H%M%S")
 
     for dataset in datasets:
-        
+        print("Checking dataset: {}".format(dataset))
         # format output directory
         dataset = dataset.rstrip('/')
         split_dataset = dataset.split('/')[-1]
         outputdir = os.path.join(outputbase, split_dataset, datestring)
         if not os.path.exists(outputdir): os.makedirs(outputdir)
 
-        # find all files in the provided dataset directory
-        # note: this part is based on a convention where the dataset might
-        #       contain an arbitrarily deep chain of subfolders,
-        #       but always only one at each level
-        #       (until the final depth with the actual root files is reached).
-        #       this might need an update in the future, e.g. using os.walk.
-        datasetcontent = os.listdir(dataset)
-        while os.path.isdir(os.path.join(dataset, datasetcontent[0])):
-            dataset = os.path.join(dataset, datasetcontent[0])
-            datasetcontent = os.listdir(dataset)
-
-        # make sure they are indeed nanoAOD files
-        datasetcontent = glob.glob(os.path.join(dataset, "*NanoAOD*.root"))
+        # in dataset: listdir
+        print("Checking dataset content: {}".format(dataset))
+        versions = [version for version in sorted(os.listdir(dataset)) if not "merged" in version]
+        if args.version == 'recent':
+            while os.path.isdir(os.path.join(dataset, versions[-1])):
+                dataset = os.path.join(dataset, versions[-1])
+                versions = [version for version in sorted(os.listdir(dataset)) if not "merged" in version] 
+            print("Processing most recent version: {}".format(dataset))
+            if input("Continue? [y/n] ") == 'n':
+                sys.exit(0)
+            datasetcontent = sorted(glob.glob(os.path.join(dataset, "*NanoAOD*.root")))
+        elif args.version == 'all':
+            datasetcontent = []
+            if os.path.isfile(os.path.join(dataset, versions[0])):
+                datasetcontent.extend(sorted(glob.glob(os.path.join(dataset, "*NanoAOD*.root"))))
+            else:
+                for version in versions:
+                    if 'merged' in version:
+                        continue                    
+                    datasetcontent.extend(sorted(glob.glob(os.path.join(dataset, version, "*NanoAOD*.root"))))
+        else:
+            raise ValueError("Invalid version argument")
+        # datasetcontent = sorted(os.listdir(dataset))
+        # while os.path.isdir(os.path.join(dataset, datasetcontent[0])):
+        #     dataset = os.path.join(dataset, datasetcontent[0])
+        #     datasetcontent = sorted(os.listdir(dataset))
+        # 
+        # # make sure they're nano
+        # datasetcontent = glob.glob(os.path.join(dataset, "*NanoAOD*.root"))
 
         cmds = []
-        for file in datasetcontent:
+        for i, file in enumerate(datasetcontent):
             cmd = "python {}".format(args.processor)
             cmd += " -i {}".format(file)
             cmd += " -n {}".format(args.nentries)
+            cmd += "\n  "
+            cmd += "cp $TMPDIR/{} {}/NanoAOD_{}.root".format(file.split("/")[-1], outputdir, i)
             cmds.append(cmd)
 
         # add a default command for copying files from tmpdir to outdir
-        copy_cmd = "cp $TMPDIR/* {}/".format(outputdir)
+        # copy_cmd = "cp $TMPDIR/* {}/".format(outputdir)
 
         batched = []
         batchsize = args.batchsize
@@ -91,7 +111,7 @@ if __name__ == "__main__":
                 batch.extend(cmds[i * batchsize:])
             else:
                 batch.extend(cmds[i * batchsize:(i+1) * batchsize])
-            batch.append(copy_cmd)
+            # batch.append(copy_cmd)
             i += 1
             batched.append(batch)
         ct.submitCommandsetsAsCondorCluster("SkimNano", batched, scriptfolder="Scripts/condor/")

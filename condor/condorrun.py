@@ -25,12 +25,7 @@ from PhysicsTools.nanoSkimming.tools.sampletools import getsampleparams
 parser = argparse.ArgumentParser(description='Submission through HTCondor')
 parser.add_argument('-i', '--inputfile', required=True)
 parser.add_argument('-n', '--nentries', type=int, default=-1)
-<<<<<<< Updated upstream
 parser.add_argument('-d', '--dropbranches', default='data/dropbranches/fourtops.txt')
-# parser.add_argument('-j', '--json', default=None)
-=======
-parser.add_argument('-d', '--dropbranches', default='../data/dropbranches/fourtops.txt')
->>>>>>> Stashed changes
 args = parser.parse_args()
 
 # print arguments
